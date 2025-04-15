@@ -57,6 +57,13 @@ final class StudyProgress: ObservableObject {
         return totalTime / Double(totalCards)
     }
     
+    // Calculate progress for a specific vocabulary set
+    func progress(for vocabularySetId: UUID) -> Double {
+        // For now, return a default progress value
+        // In a real implementation, you would track progress per vocabulary set
+        return 0.5
+    }
+    
     func recordSuccess() {
         completedCards += 1
         lastStudied = Date()

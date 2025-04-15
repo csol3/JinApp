@@ -4,17 +4,21 @@ struct FlashCardView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: FlashCardViewModel
     @State private var userInput = ""
-    @State private var borderColor = Color.gray
-    @State private var borderWidth: CGFloat = 1
+    @State private var borderColor = Color(red: 0.831, green: 0.686, blue: 0.216)
+    @State private var borderWidth: CGFloat = 2
     private let goldColor = Color(red: 0.831, green: 0.686, blue: 0.216)
     
     var body: some View {
         NavigationView {
-            VStack {
-                if viewModel.isNameInput {
-                    nameInputView
-                } else {
-                    flashcardView
+            ZStack {
+                Color.black.edgesIgnoringSafeArea(.all)
+                
+                VStack {
+                    if viewModel.isNameInput {
+                        nameInputView
+                    } else {
+                        flashcardView
+                    }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -24,11 +28,12 @@ struct FlashCardView: View {
                         dismiss()
                     }) {
                         Image(systemName: "chevron.left")
-                            .foregroundColor(.white)
+                            .foregroundColor(goldColor)
                     }
                 }
             }
         }
+        .preferredColorScheme(.dark)
     }
     
     private var nameInputView: some View {
@@ -70,7 +75,7 @@ struct FlashCardView: View {
             // Card
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.systemBackground))
+                    .fill(Color.black)
                     .shadow(radius: 5)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
@@ -85,7 +90,7 @@ struct FlashCardView: View {
                         
                         Text(card.pinyin)
                             .font(.title2)
-                            .foregroundColor(.gray)
+                            .foregroundColor(goldColor)
                         
                         if viewModel.isShowingAnswer {
                             Text(card.translation)
@@ -99,11 +104,25 @@ struct FlashCardView: View {
             }
             .frame(height: 300)
             .padding()
+            .onChange(of: viewModel.isShowingAnswer) { oldValue, newValue in
+                if newValue {
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        borderColor = viewModel.isCorrect ? .green : .red
+                        borderWidth = 4
+                    }
+                } else {
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        borderColor = goldColor
+                        borderWidth = 2
+                    }
+                }
+            }
             
             // Input field
             TextField("Enter translation", text: $userInput)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
+                .disabled(viewModel.isShowingAnswer)
             
             // Submit button
             Button(action: {

@@ -87,8 +87,8 @@ struct ColorPickerRow: View {
             
             Spacer()
             
-            ColorPicker("", selection: $color)
-                .labelsHidden()
+            // Use a custom color picker implementation to avoid constraint issues
+            ColorPickerButton(color: $color)
         }
         .padding()
         .background(
@@ -97,6 +97,154 @@ struct ColorPickerRow: View {
                 .shadow(color: .gray.opacity(0.2),
                        radius: 8, x: 0, y: 4)
         )
+    }
+}
+
+// Custom color picker button to avoid constraint issues
+struct ColorPickerButton: View {
+    @Binding var color: Color
+    @State private var showingColorPicker = false
+    
+    var body: some View {
+        Button(action: {
+            showingColorPicker.toggle()
+        }) {
+            Circle()
+                .fill(color)
+                .frame(width: 30, height: 30)
+                .overlay(
+                    Circle()
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
+        }
+        .fullScreenCover(isPresented: $showingColorPicker) {
+            NavigationView {
+                RGBColorPicker(color: $color)
+                    .padding()
+                    .navigationTitle("Choose Color")
+                    .navigationBarItems(trailing: Button("Done") {
+                        showingColorPicker = false
+                    })
+            }
+        }
+    }
+}
+
+// Custom RGB color picker using sliders
+struct RGBColorPicker: View {
+    @Binding var color: Color
+    
+    // Extract RGB components from the color
+    private var red: Double {
+        let components = color.components
+        return components.red
+    }
+    
+    private var green: Double {
+        let components = color.components
+        return components.green
+    }
+    
+    private var blue: Double {
+        let components = color.components
+        return components.blue
+    }
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // Color preview
+            RoundedRectangle(cornerRadius: 12)
+                .fill(color)
+                .frame(height: 100)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
+            
+            // RGB sliders
+            VStack(alignment: .leading, spacing: 15) {
+                HStack {
+                    Text("Red")
+                        .frame(width: 40, alignment: .leading)
+                    Slider(value: Binding(
+                        get: { red },
+                        set: { updateColor(red: $0, green: green, blue: blue) }
+                    ), in: 0...1)
+                    Text("\(Int(red * 255))")
+                        .frame(width: 30, alignment: .trailing)
+                }
+                
+                HStack {
+                    Text("Green")
+                        .frame(width: 40, alignment: .leading)
+                    Slider(value: Binding(
+                        get: { green },
+                        set: { updateColor(red: red, green: $0, blue: blue) }
+                    ), in: 0...1)
+                    Text("\(Int(green * 255))")
+                        .frame(width: 30, alignment: .trailing)
+                }
+                
+                HStack {
+                    Text("Blue")
+                        .frame(width: 40, alignment: .leading)
+                    Slider(value: Binding(
+                        get: { blue },
+                        set: { updateColor(red: red, green: green, blue: $0) }
+                    ), in: 0...1)
+                    Text("\(Int(blue * 255))")
+                        .frame(width: 30, alignment: .trailing)
+                }
+            }
+            
+            // Preset colors
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(presetColors, id: \.self) { presetColor in
+                        Circle()
+                            .fill(presetColor)
+                            .frame(width: 30, height: 30)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                            )
+                            .onTapGesture {
+                                color = presetColor
+                            }
+                    }
+                }
+                .padding(.vertical, 10)
+            }
+            
+            Spacer()
+        }
+    }
+    
+    // Update the color with new RGB values
+    private func updateColor(red: Double, green: Double, blue: Double) {
+        color = Color(red: red, green: green, blue: blue)
+    }
+    
+    // Preset colors for quick selection
+    private let presetColors: [Color] = [
+        .red, .orange, .yellow, .green, .blue, .purple,
+        .pink, .brown, .black, .gray, .white
+    ]
+}
+
+// Extension to extract RGB components from Color
+extension Color {
+    var components: (red: Double, green: Double, blue: Double, opacity: Double) {
+        var r: CGFloat = 0
+        var g: CGFloat = 0
+        var b: CGFloat = 0
+        var o: CGFloat = 0
+        
+        guard UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &o) else {
+            return (0, 0, 0, 0)
+        }
+        
+        return (Double(r), Double(g), Double(b), Double(o))
     }
 }
 

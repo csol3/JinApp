@@ -21,7 +21,8 @@ struct OnboardingView: View {
                         .foregroundColor(goldColor)
                         .padding(.top)
                     
-                    TabView(selection: $viewModel.currentStep) {
+                    // Use a custom tab view implementation to avoid keyboard issues
+                    CustomTabView(selection: $viewModel.currentStep) {
                         NameInputView(viewModel: viewModel)
                             .tag(OnboardingViewModel.OnboardingStep.name)
                         
@@ -37,7 +38,6 @@ struct OnboardingView: View {
                         ToneColorPickerView(viewModel: viewModel)
                             .tag(OnboardingViewModel.OnboardingStep.toneColors)
                     }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
                     
                     Button(action: handleNextStep) {
                         Text(isLastStep ? "Get Started" : "Next")
@@ -76,6 +76,25 @@ struct OnboardingView: View {
         } else {
             viewModel.moveToNextStep()
         }
+    }
+}
+
+// Custom tab view to avoid keyboard issues
+struct CustomTabView<SelectionValue: Hashable, Content: View>: View {
+    @Binding var selection: SelectionValue
+    let content: () -> Content
+    
+    init(selection: Binding<SelectionValue>, @ViewBuilder content: @escaping () -> Content) {
+        self._selection = selection
+        self.content = content
+    }
+    
+    var body: some View {
+        TabView(selection: $selection) {
+            content()
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 }
 

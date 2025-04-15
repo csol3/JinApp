@@ -32,8 +32,7 @@ struct LandingView: View {
                             HStack(spacing: 15) {
                                 ForEach(1...userProfile.hskLevel.rawValue, id: \.self) { level in
                                     VocabSetCard(
-                                        vocabularySet: viewModel.vocabularySet(for: .hsk(level: level)),
-                                        studyProgress: viewModel.studyProgress(for: .hsk(level: level))
+                                        vocabularySet: viewModel.vocabularySet(for: .hsk(level: level))
                                     )
                                 }
                             }
@@ -49,20 +48,19 @@ struct LandingView: View {
                             HStack(spacing: 15) {
                                 if userProfile.genrePreferences.academic {
                                     VocabSetCard(
-                                        vocabularySet: viewModel.vocabularySet(for: .genre(.academic)),
-                                        studyProgress: viewModel.studyProgress(for: .genre(.academic))
+                                        vocabularySet: viewModel.vocabularySet(for: .genre(.academic))
                                     )
                                 }
+                                
                                 if userProfile.genrePreferences.press {
                                     VocabSetCard(
-                                        vocabularySet: viewModel.vocabularySet(for: .genre(.press)),
-                                        studyProgress: viewModel.studyProgress(for: .genre(.press))
+                                        vocabularySet: viewModel.vocabularySet(for: .genre(.press))
                                     )
                                 }
+                                
                                 if userProfile.genrePreferences.fiction {
                                     VocabSetCard(
-                                        vocabularySet: viewModel.vocabularySet(for: .genre(.fiction)),
-                                        studyProgress: viewModel.studyProgress(for: .genre(.fiction))
+                                        vocabularySet: viewModel.vocabularySet(for: .genre(.fiction))
                                     )
                                 }
                             }
@@ -72,6 +70,7 @@ struct LandingView: View {
                     .padding(.vertical)
                 }
             }
+            .navigationBarHidden(true)
             .task {
                 await viewModel.loadVocabularySets()
             }

@@ -2,14 +2,16 @@ import SwiftUI
 
 struct VocabSetCard: View {
     let vocabularySet: VocabularySet
-    let studyProgress: StudyProgress
+    @StateObject private var studyProgress = StudyProgress()
     @State private var showingFlashcards = false
+    
+    private let goldColor = Color(red: 212/255, green: 175/255, blue: 55/255)
     
     var body: some View {
         Button(action: {
             showingFlashcards = true
         }) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text(vocabularySet.name)
                     .font(.headline)
                     .foregroundColor(.white)
@@ -17,19 +19,24 @@ struct VocabSetCard: View {
                 Text("\(vocabularySet.cards.count) cards")
                     .font(.subheadline)
                     .foregroundColor(.gray)
+                
+                ProgressView(value: studyProgress.progress(for: vocabularySet.id))
+                    .progressViewStyle(LinearProgressViewStyle(tint: goldColor))
+                    .background(Color.gray.opacity(0.3))
+                    .cornerRadius(4)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
-            .background(Color(.systemBackground))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.black)
             .cornerRadius(12)
-            .shadow(radius: 5)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(goldColor, lineWidth: 1)
+            )
         }
         .buttonStyle(PlainButtonStyle())
         .fullScreenCover(isPresented: $showingFlashcards) {
-            let viewModel = FlashCardViewModel(
-                vocabularySet: vocabularySet,
-                studyProgress: studyProgress
-            )
+            let viewModel = FlashCardViewModel(vocabularySet: vocabularySet, studyProgress: studyProgress)
             FlashCardView(viewModel: viewModel)
         }
     }
@@ -37,8 +44,7 @@ struct VocabSetCard: View {
 
 #Preview {
     VocabSetCard(
-        vocabularySet: VocabularySet.preview,
-        studyProgress: StudyProgress()
+        vocabularySet: VocabularySet.preview
     )
     .preferredColorScheme(.dark)
     .padding()
