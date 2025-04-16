@@ -3,16 +3,19 @@ import Foundation
 struct CSVFlashCard {
     let character: String
     let pinyin: String
-    let translation: String
-    let complexity: Int
-    let example: String?
+    let tones: String
+    let meaning: String
+    let strokeCount: Int
+    let hskLevel: Int
+    let length: Int
+    let complexity: Double
     
     func toFlashCard() -> FlashCard {
         FlashCard(
             character: character,
             pinyin: pinyin,
-            translation: translation,
-            example: example
+            translation: meaning,
+            example: nil
         )
     }
 }
@@ -63,9 +66,11 @@ class VocabularySetLoader {
     }
     
     private static func loadCSV(filename: String) -> [CSVFlashCard]? {
-        guard let path = Bundle.main.path(forResource: filename, ofType: "csv"),
-              let content = try? String(contentsOfFile: path, encoding: .utf8) else {
-            print("Failed to load \(filename).csv")
+        // Direct path to the CSV files
+        let path = "/Users/chrissole/Documents/Project/App2/JinApp/JinApp/Resources/DataNew/\(filename).csv"
+        
+        guard let content = try? String(contentsOfFile: path, encoding: .utf8) else {
+            print("Failed to load \(filename).csv from \(path)")
             return nil
         }
         
@@ -74,18 +79,22 @@ class VocabularySetLoader {
         
         for row in rows.dropFirst() { // Skip header row
             let columns = row.components(separatedBy: ",")
-            guard columns.count >= 4 else { continue }
+            guard columns.count >= 8 else { continue }
             
             let card = CSVFlashCard(
                 character: columns[0].trimmingCharacters(in: .whitespaces),
                 pinyin: columns[1].trimmingCharacters(in: .whitespaces),
-                translation: columns[2].trimmingCharacters(in: .whitespaces),
-                complexity: Int(columns[3].trimmingCharacters(in: .whitespaces)) ?? 1,
-                example: columns.count > 4 ? columns[4].trimmingCharacters(in: .whitespaces) : nil
+                tones: columns[2].trimmingCharacters(in: .whitespaces),
+                meaning: columns[3].trimmingCharacters(in: .whitespaces),
+                strokeCount: Int(columns[4].trimmingCharacters(in: .whitespaces)) ?? 0,
+                hskLevel: Int(columns[5].trimmingCharacters(in: .whitespaces)) ?? 1,
+                length: Int(columns[6].trimmingCharacters(in: .whitespaces)) ?? 1,
+                complexity: Double(columns[7].trimmingCharacters(in: .whitespaces)) ?? 1.0
             )
             cards.append(card)
         }
         
+        print("Successfully loaded \(cards.count) cards from \(filename).csv")
         return cards
     }
 } 

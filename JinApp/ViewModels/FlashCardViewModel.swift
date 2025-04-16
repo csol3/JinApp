@@ -15,21 +15,23 @@ class FlashCardViewModel: ObservableObject {
     @Published var isShowingAnswer = false
     @Published var showingCompletion = false
     @Published var correctAnswers = 0
+    @Published var incorrectAnswers = 0
     @Published var isCorrect = false
     @Published var cardOffset: CGFloat = 0
     @Published var cardRotation: Double = 0
     @Published var isNameInput = true
     @Published var userName = ""
     @Published var totalCards = 0
+    @Published var isReadyForNextCard = false
     
     var currentCard: FlashCard? {
-        guard currentCardIndex < vocabularySet.cards.count else { return nil }
-        return vocabularySet.cards[currentCardIndex]
+        guard currentCardIndex < cards.count else { return nil }
+        return cards[currentCardIndex]
     }
     
     var progress: Double {
-        guard vocabularySet.cards.count > 0 else { return 0 }
-        return Double(currentCardIndex) / Double(vocabularySet.cards.count)
+        guard cards.count > 0 else { return 0 }
+        return Double(currentCardIndex) / Double(cards.count)
     }
     
     init(vocabularySet: VocabularySet, studyProgress: StudyProgress) {
@@ -59,27 +61,39 @@ class FlashCardViewModel: ObservableObject {
         print("Trimmed answer: '\(trimmedAnswer)'")
         
         isCorrect = trimmedInput == trimmedAnswer
+        print("Answer is correct: \(isCorrect)")
         
         if isCorrect {
             correctAnswers += 1
             studyProgress.recordSuccess()
         } else {
-            incorrectCards.append(card)
+            incorrectAnswers += 1
             studyProgress.recordFailure()
         }
         
+        // Show answer feedback
         isShowingAnswer = true
+        isReadyForNextCard = false
         
         // Provide haptic feedback
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(isCorrect ? .success : .error)
+        
+        // After showing the answer, mark as ready for next card
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            self.isReadyForNextCard = true
+        }
     }
     
     func nextCard() {
+        // Only proceed if we're ready for the next card
+        guard isReadyForNextCard else { return }
+        
         isShowingAnswer = false
+        isReadyForNextCard = false
         userInput = ""
         
-        if currentCardIndex < vocabularySet.cards.count - 1 {
+        if currentCardIndex < cards.count - 1 {
             currentCardIndex += 1
         } else {
             showingCompletion = true
@@ -103,13 +117,15 @@ class FlashCardViewModel: ObservableObject {
         // Reset state for review
         currentCardIndex = 0
         correctAnswers = 0
+        incorrectAnswers = 0
         isShowingAnswer = false
+        isReadyForNextCard = false
         userInput = ""
         showingCompletion = false
         
         // Replace current set with incorrect cards
-        vocabularySet.cards = incorrectCards
+        cards = incorrectCards.shuffled()
         incorrectCards = []
-        totalCards = vocabularySet.cards.count
+        totalCards = cards.count
     }
 } 

@@ -3,9 +3,10 @@ import SwiftUI
 struct FlashCardView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: FlashCardViewModel
-    @State private var userInput = ""
+    @State private var nameInput = ""
     @State private var borderColor = Color(red: 0.831, green: 0.686, blue: 0.216)
     @State private var borderWidth: CGFloat = 2
+    @State private var isFlipped = false
     private let goldColor = Color(red: 0.831, green: 0.686, blue: 0.216)
     
     var body: some View {
@@ -45,12 +46,12 @@ struct FlashCardView: View {
             Text("Please enter your name to begin")
                 .foregroundColor(.gray)
             
-            TextField("Your name", text: $userInput)
+            TextField("Your name", text: $nameInput)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.horizontal)
             
             Button(action: {
-                viewModel.submitName(userInput)
+                viewModel.submitName(nameInput)
             }) {
                 Text("Start Learning")
                     .foregroundColor(.black)
@@ -60,7 +61,7 @@ struct FlashCardView: View {
                     .cornerRadius(10)
             }
             .padding(.horizontal)
-            .disabled(userInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .disabled(nameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
         .padding()
     }
@@ -82,44 +83,61 @@ struct FlashCardView: View {
                             .stroke(borderColor, lineWidth: borderWidth)
                     )
                 
-                VStack(spacing: 20) {
+                if isFlipped {
+                    // Back of card (translation)
                     if let card = viewModel.currentCard {
-                        Text(card.character)
-                            .font(.system(size: 48))
-                            .foregroundColor(.white)
-                        
-                        Text(card.pinyin)
-                            .font(.title2)
-                            .foregroundColor(goldColor)
-                        
-                        if viewModel.isShowingAnswer {
+                        VStack(spacing: 20) {
                             Text(card.translation)
-                                .font(.title3)
+                                .font(.title)
                                 .foregroundColor(.white)
-                                .transition(.opacity)
+                                .multilineTextAlignment(.center)
                         }
+                        .padding()
+                    }
+                } else {
+                    // Front of card (character and pinyin)
+                    if let card = viewModel.currentCard {
+                        VStack(spacing: 20) {
+                            Text(card.character)
+                                .font(.system(size: 48))
+                                .foregroundColor(.white)
+                            
+                            Text(card.pinyin)
+                                .font(.title2)
+                                .foregroundColor(goldColor)
+                        }
+                        .padding()
                     }
                 }
-                .padding()
             }
             .frame(height: 300)
             .padding()
             .onChange(of: viewModel.isShowingAnswer) { oldValue, newValue in
                 if newValue {
+                    // First show the color feedback
                     withAnimation(.easeInOut(duration: 0.5)) {
                         borderColor = viewModel.isCorrect ? .green : .red
                         borderWidth = 4
                     }
+                    
+                    // Then flip the card after a short delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            isFlipped = true
+                        }
+                    }
                 } else {
-                    withAnimation(.easeInOut(duration: 0.5)) {
+                    // Reset the card
+                    withAnimation(.easeInOut(duration: 0.3)) {
                         borderColor = goldColor
                         borderWidth = 2
+                        isFlipped = false
                     }
                 }
             }
             
             // Input field
-            TextField("Enter translation", text: $userInput)
+            TextField("Enter translation", text: $viewModel.userInput)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
                 .disabled(viewModel.isShowingAnswer)
@@ -136,7 +154,23 @@ struct FlashCardView: View {
                     .cornerRadius(10)
             }
             .padding(.horizontal)
-            .disabled(userInput.isEmpty || viewModel.isShowingAnswer)
+            .disabled(viewModel.userInput.isEmpty || viewModel.isShowingAnswer)
+            
+            // Next card button (only visible when ready)
+            if viewModel.isReadyForNextCard {
+                Button(action: {
+                    viewModel.nextCard()
+                }) {
+                    Text("Next Card")
+                        .foregroundColor(.black)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(goldColor)
+                        .cornerRadius(10)
+                }
+                .padding(.horizontal)
+                .transition(.opacity)
+            }
         }
     }
 }
